@@ -1,6 +1,5 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable no-undef */
-import { Fragment, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { Fragment } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import * as XLSX from "xlsx";
@@ -12,6 +11,7 @@ const dictionnaires = [
   { name: "diagnosis" },
   { name: "procedure" },
 ];
+
 const patient = [
   "PatientNumber",
   "DateOfBirth",
@@ -167,6 +167,7 @@ const procedure = [
   "Extra:NbrProcedures",
   "Extra:LastUpdateDateTime",
 ];
+
 function Hero() {
   const [selected, setSelected] = useState(dictionnaires[0]);
   const [columnNames, setColumnNames] = useState([]);
@@ -174,21 +175,9 @@ function Hero() {
   const [selectededData, setSelectededData] = useState([]);
   const [modifiedNames, setModifiedNames] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
+  const [modifiedColumns, setModifiedColumns] = useState([]);
   const [selectedArray, setSelectedArray] = useState("");
-  // const handleFile = async (e) => {
-  //   const file = e.target.files[0];
-  //   setFileName(file.name);
-  //   const data = await file.arrayBuffer();
-  //   const workbook = XLSX.read(data, { sheetRows: 1 });
 
-  //   const workSheet = workbook.Sheets[workbook.SheetNames[0]];
-  //   const jsonData = XLSX.utils.sheet_to_json(workSheet, {
-  //     header: 1,
-  //     defval: "",
-  //   });
-  //   setColumnNames(jsonData[0]);
-  //   console.log(fileColumns);
-  // };
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     setFileName(file.name);
@@ -201,12 +190,15 @@ function Hero() {
       defval: "",
     });
     setColumnNames(jsonData[0]);
+    setModifiedColumns([]);
   };
+
   const handleNameChange = (index, event) => {
     const modified = [...modifiedNames];
     modified[index] = event.target.value;
     setModifiedNames(modified);
   };
+
   const handleSave = () => {
     const workbook = new XLSX.WorkBook();
     const worksheet = workbook.addWorksheet("Sheet1");
@@ -220,8 +212,11 @@ function Hero() {
       link.href = url;
       link.download = "new_file.xlsx";
       link.click();
+
+      // solution
     });
   };
+
   const handleArrayChange = async (e) => {
     const selectedArrayName = e.target.value;
 
@@ -255,21 +250,8 @@ function Hero() {
       setSelectededData(selectedArrayData);
     }
     setSelectedArray(selectedArrayName);
-    // console.log(selectededData);
-
-    // const filtered = await new Promise((resolve) => {
-    //   setTimeout(() => {
-    //     const result = columnNames.filter((column) => {
-    //       !selectededData.includes(column);
-    //     });
-    //     resolve(result);
-    //   }, 1000);
-    // });
-    // // const filtered = columnNames.filter(
-    // //   (column) => !selectededData.includes(column)
-    // // );
-    // setFilteredData(filtered);
   };
+
   useEffect(() => {
     if (selectededData.length > 0) {
       const filtered = columnNames.filter(
@@ -282,32 +264,26 @@ function Hero() {
   useEffect(() => {
     console.log(selectededData);
     console.log(filteredData);
+    console.log(fileName);
+    console.log(columnNames);
   }, [selectededData, filteredData]);
 
   return (
-    // <div className="grid grid-cols-3 px-7 h-20">
-    <div className="flex items-start px-7  gap-3.5 flex-wrap mb-20 ml-10 mr-10 justify-between">
+    <div className="flex items-start px-7 gap-3.5 flex-wrap mb-20 ml-10 mr-10 justify-between">
       <div className="flex items-end">
         <label className="block mb-2 text-sm font-medium text-dark w-28">
-          Current File :
+          Current File:
         </label>
-
         <input
           type="file"
           accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-          className="block w-full text-sm text-slate-500
-      file:mr-4 file:py-2 file:px-4
-      file:rounded-full file:border-0
-      file:text-sm file:font-semibold
-      file:bg-violet-50 file:text-violet-700
-      hover:file:bg-violet-100
-    "
+          className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
           onChange={handleFileUpload}
         />
       </div>
-      <div className="relative max-w-xs  flex items-end	w-80 h-8">
-        <label className="block  text-sm font-medium text-dark w-28">
-          Current File :
+      <div className="relative max-w-xs flex items-end w-80 h-8">
+        <label className="block text-sm font-medium text-dark w-28">
+          Current File:
         </label>
         <select value={selectedArray || "None"} onChange={handleArrayChange}>
           <option value="None" disabled>
@@ -320,7 +296,7 @@ function Hero() {
           <option value="procedure">procedure</option>
         </select>
       </div>
-      <div className="border rounded-lg bg-violet-50 ">
+      <div className="border rounded-lg bg-violet-50">
         <p className="p-3 font-bold">Latest Files Uploaded</p>
         <div className="flex flex-col overflow-y-auto">
           <ul className="py-2 px-4 border-t">
@@ -336,7 +312,7 @@ function Hero() {
           {filteredData &&
             filteredData.slice(1).map((col, index) => (
               <ul
-                className="py-2 px-4 border-t flex justify-between "
+                className="py-2 px-4 border-t flex justify-between"
                 key={index}
               >
                 {col}
