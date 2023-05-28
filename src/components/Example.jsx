@@ -7,6 +7,19 @@ const dictionnaires = [
   { name: "transfer" },
   { name: "diagnosis" },
   { name: "procedure" },
+  { name: "service " },
+];
+
+const service = [
+  "PatientNumber",
+  "StartDateTime",
+  "Quantity",
+  "ServiceCode",
+  "EncounterNumber",
+  "Extra:ServiceDescription",
+  "ServiceGroup",
+  "Clinic",
+  "OrderDateTime",
 ];
 
 const patient = [
@@ -175,11 +188,15 @@ const App = () => {
   const [modifiedColumnNames, setModifiedColumnNames] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [fileType, setFileType] = useState("");
+  const [file, setFile] = useState();
 
   // Handle file upload
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     setFileName(file.name);
+    setFile(file);
+    setFileType(file.type);
     const reader = new FileReader();
 
     reader.onload = (e) => {
@@ -198,6 +215,32 @@ const App = () => {
 
   // Handle list selection
   const handleListSelection = (e) => {
+    if (columnNames.length === null) {
+      // Send an empty request since there are no column changes
+      fetch("/api/save", {
+        method: "POST",
+        body: JSON.stringify({}),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          // Handle the response from the backend
+          console.log("Response from backend:", data);
+          // ...
+        })
+        .catch((error) => {
+          // Handle errors
+          console.error("Error:", error);
+          // ...
+        });
+
+      const fileInput = document.getElementById("fileInput");
+      fileInput.value = null;
+      resetState();
+      return; // Exit the function early
+    }
     const selectedArrayName = e.target.value;
     // Reset SelectededData if no array is selected
     if (selectedArrayName === "None") {
@@ -208,6 +251,9 @@ const App = () => {
       switch (selectedArrayName) {
         case "patient":
           selectedArrayData = patient;
+          break;
+        case "service":
+          selectedArrayData = service;
           break;
         case "encounter":
           selectedArrayData = encounter;
@@ -274,9 +320,10 @@ const App = () => {
       columnChanges[name] = modifiedColumnNames[index] || ""; // Use empty string if no modification is made
     });
 
-    // Console log the column changes object
-    console.log("Column Changes:", columnChanges);
+    const formData = new FormData();
+    formData.append("file", file);
 
+    console.log("Form Data to send to backend:", formData);
     // Create the data object to send to the backend
     const dataToSend = {
       columnChange: filteredData.reduce((result, name, index) => {
@@ -284,10 +331,33 @@ const App = () => {
         return result;
       }, {}),
       fileName: fileName, // Replace with the actual file name
-      originalFile: fileData, // Replace with the actual original file data
+      fileType: fileType,
     };
 
     console.log("Data to send to backend:", dataToSend);
+
+    console.log(formData);
+    // send excel file
+    fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "access-control-allow-origin": "*",
+        accept: "application/json",
+        "content-type": "multipart/form-data",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Handle the response from the backend
+        console.log("Response from file upload:", data);
+        // ...
+      })
+      .catch((error) => {
+        // Handle errors
+        console.error("Error:", error);
+        // ...
+      });
 
     // Send the POST request to the backend
     fetch("/api/save", {
@@ -317,45 +387,6 @@ const App = () => {
     setIsSaving(false);
     resetState();
   };
-  // Handle save changes
-  // const handleSaveChanges = () => {
-  //   const updatedFileData = [...fileData];
-  //   const modifiedColumnIndexes = {};
-
-  //   modifiedColumnNames.forEach((name, index) => {
-  //     if (name !== "") {
-  //       modifiedColumnIndexes[index] = true;
-  //       updatedFileData[0][index] = name;
-  //     }
-  //   });
-
-  //   columnNames.forEach((name, index) => {
-  //     if (!modifiedColumnIndexes[index]) {
-  //       updatedFileData[0][index] = name;
-  //     }
-  //   });
-  //   // Create an object to store the column changes
-  //   const columnChanges = {};
-
-  //   filteredData.forEach((name, index) => {
-  //     columnChanges[name] = modifiedColumnNames[index] || ""; // Use empty string if no modification is made
-  //   });
-
-  //   // Console log the column changes object
-  //   console.log("Column Changes:", columnChanges);
-
-  //   const workbook = XLSX.utils.book_new();
-  //   const sheet = XLSX.utils.aoa_to_sheet(updatedFileData);
-  //   XLSX.utils.book_append_sheet(workbook, sheet, "Modified Sheet");
-  //   XLSX.writeFile(workbook, "modified_file.xlsx");
-  //   const fileInput = document.getElementById("fileInput");
-  //   fileInput.value = null;
-  //   setColumnNames([]);
-  //   setModifiedColumnNames([]);
-  //   setFileData([]);
-  //   setIsSaving(false);
-  //   resetState();
-  // };
 
   // Enable save button when there are modifications
   useEffect(() => {
@@ -389,6 +420,7 @@ const App = () => {
           <option value="transfer">transfer</option>
           <option value="diagnosis">diagnosis</option>
           <option value="procedure">procedure</option>
+          <option value="servcie">service</option>
         </select>
       </div>
       {fileData && (
@@ -429,7 +461,7 @@ const App = () => {
           </table>
           <button
             onClick={handleSaveChanges}
-            disabled={!isSaving}
+            // disabled={!isSaving}
             className="mt-4 bg-emerald-500 block ml-auto hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Submit
