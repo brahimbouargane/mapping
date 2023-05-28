@@ -1,20 +1,28 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
 import "./App.css";
-import Header from "./components/Header";
-import Hero from "./components/Hero";
-import Hero2 from "./components/Hero2";
-import Example from "./components/Example";
-import Ex2 from "./components/Ex2";
+import Login from "./pages/Login";
+import HomePage from "./pages/homepage";
+import Signin from "./pages/Signin";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 
 export default function App() {
+  const [user, setLoginUser] = useState({});
   return (
-    <>
-      <Header />
-      <Hero2 />
-      {/* <Hero /> */}
-      <Example />
-      {/* <Ex2 /> */}
-    </>
+    // <div className="App">
+    //   <Router>
+    //     <Switch>
+    //       <Route exact path="/">
+    //         {user && user._id ? <HomePage /> : <Login />}
+    //         <HomePage />
+    //       </Route>
+    //       <Route path="/Login">
+    //         <Login setLoginUser={setLoginUser} />
+    //       </Route>
+    //       <Route path="/Register">
+    //         <Signin />
+    //       </Route>
+    //     </Switch>
+    //   </Router>
+    // </div>
   );
 }

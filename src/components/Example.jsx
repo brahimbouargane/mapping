@@ -174,10 +174,12 @@ const App = () => {
   const [columnNames, setColumnNames] = useState([]);
   const [modifiedColumnNames, setModifiedColumnNames] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [fileName, setFileName] = useState("");
 
   // Handle file upload
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
+    setFileName(file.name);
     const reader = new FileReader();
 
     reader.onload = (e) => {
@@ -254,7 +256,6 @@ const App = () => {
     setFilteredData([]);
     setSelectedList([]);
   };
-  // Handle save changes
   const handleSaveChanges = () => {
     const updatedFileData = [...fileData];
     const modifiedColumnIndexes = {};
@@ -266,16 +267,48 @@ const App = () => {
       }
     });
 
-    columnNames.forEach((name, index) => {
-      if (!modifiedColumnIndexes[index]) {
-        updatedFileData[0][index] = name;
-      }
+    // Create an object to store the column changes
+    const columnChanges = {};
+
+    filteredData.forEach((name, index) => {
+      columnChanges[name] = modifiedColumnNames[index] || ""; // Use empty string if no modification is made
     });
 
-    const workbook = XLSX.utils.book_new();
-    const sheet = XLSX.utils.aoa_to_sheet(updatedFileData);
-    XLSX.utils.book_append_sheet(workbook, sheet, "Modified Sheet");
-    XLSX.writeFile(workbook, "modified_file.xlsx");
+    // Console log the column changes object
+    console.log("Column Changes:", columnChanges);
+
+    // Create the data object to send to the backend
+    const dataToSend = {
+      columnChange: filteredData.reduce((result, name, index) => {
+        result[name] = modifiedColumnNames[index];
+        return result;
+      }, {}),
+      fileName: fileName, // Replace with the actual file name
+      originalFile: fileData, // Replace with the actual original file data
+    };
+
+    console.log("Data to send to backend:", dataToSend);
+
+    // Send the POST request to the backend
+    fetch("/api/save", {
+      method: "POST",
+      body: JSON.stringify(dataToSend),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Handle the response from the backend
+        console.log("Response from backend:", data);
+        // ...
+      })
+      .catch((error) => {
+        // Handle errors
+        console.error("Error:", error);
+        // ...
+      });
+
     const fileInput = document.getElementById("fileInput");
     fileInput.value = null;
     setColumnNames([]);
@@ -284,6 +317,45 @@ const App = () => {
     setIsSaving(false);
     resetState();
   };
+  // Handle save changes
+  // const handleSaveChanges = () => {
+  //   const updatedFileData = [...fileData];
+  //   const modifiedColumnIndexes = {};
+
+  //   modifiedColumnNames.forEach((name, index) => {
+  //     if (name !== "") {
+  //       modifiedColumnIndexes[index] = true;
+  //       updatedFileData[0][index] = name;
+  //     }
+  //   });
+
+  //   columnNames.forEach((name, index) => {
+  //     if (!modifiedColumnIndexes[index]) {
+  //       updatedFileData[0][index] = name;
+  //     }
+  //   });
+  //   // Create an object to store the column changes
+  //   const columnChanges = {};
+
+  //   filteredData.forEach((name, index) => {
+  //     columnChanges[name] = modifiedColumnNames[index] || ""; // Use empty string if no modification is made
+  //   });
+
+  //   // Console log the column changes object
+  //   console.log("Column Changes:", columnChanges);
+
+  //   const workbook = XLSX.utils.book_new();
+  //   const sheet = XLSX.utils.aoa_to_sheet(updatedFileData);
+  //   XLSX.utils.book_append_sheet(workbook, sheet, "Modified Sheet");
+  //   XLSX.writeFile(workbook, "modified_file.xlsx");
+  //   const fileInput = document.getElementById("fileInput");
+  //   fileInput.value = null;
+  //   setColumnNames([]);
+  //   setModifiedColumnNames([]);
+  //   setFileData([]);
+  //   setIsSaving(false);
+  //   resetState();
+  // };
 
   // Enable save button when there are modifications
   useEffect(() => {
@@ -302,14 +374,14 @@ const App = () => {
           type="file"
           accept=".xlsx, .xls"
           onChange={handleFileUpload}
-          className="border border-gray-300 rounded px-2 py-1"
+          className="block text-sm px-4 py-2 text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-emerald-500 dark:text-gray-400 focus:outline-none dark:bg-emerald-600 dark:border-gray-600 dark:placeholder-gray-200"
         />
 
         <p className="mb-2">Selected List: {selectedList}</p>
         <select
           value={selectedList}
           onChange={handleListSelection}
-          className="border border-gray-300 rounded px-8 mb-4  "
+          className="bg-gray-50 border w-3/12	 border-emerald-300 text-emerald-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-600 block  p-2.5 dark:bg-emerald-500 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-emerald-500"
         >
           <option value="">Select a List</option>
           <option value="patient">patient</option>
@@ -341,7 +413,7 @@ const App = () => {
                         handleColumnNameChange(index, e.target.value)
                       }
                       disabled={selectedList === ""}
-                      className="border border-gray-300 rounded px-2 py-1"
+                      className="bg-gray-50 border m-auto border-emerald-300 text-emerald-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-600 block  p-2.5 dark:bg-emerald-500 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-emerald-500"
                     >
                       <option value="">Unchanged</option>
                       {selectededData.map((option, index) => (
@@ -358,9 +430,9 @@ const App = () => {
           <button
             onClick={handleSaveChanges}
             disabled={!isSaving}
-            className="mt-4 bg-blue-500 block ml-auto hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="mt-4 bg-emerald-500 block ml-auto hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            Save Changes
+            Submit
           </button>
         </div>
       )}
